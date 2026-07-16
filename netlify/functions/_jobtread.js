@@ -18,7 +18,18 @@ async function jobtreadQuery(queryBody) {
     }),
   });
 
-  const data = await res.json();
+  const rawText = await res.text();
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch (parseErr) {
+    // JobTread sent back something that isn't JSON at all (often an auth
+    // failure or a plain-text error page) - surface the real text instead
+    // of a confusing "not valid JSON" parse error.
+    throw new Error(
+      `JobTread API returned a non-JSON response (HTTP ${res.status}): ${rawText.slice(0, 300)}`
+    );
+  }
 
   if (data.errors) {
     throw new Error(
