@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>CLC PO Requests</title>
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#1E2124" />
+<style>
+  :root{
+    --ink:#1E2124;
+    --ink-soft:#3A3F44;
+    --paper:#F7F5F0;
+    --paper-card:#FFFFFF;
+    --line:#DDD8CE;
+    --orange:#FF6B1A;
+    --orange-dark:#D9560F;
+    --amber:#B8860B;
+    --amber-bg:#FBF1DA;
+    --green:#2F7D4F;
+    --green-bg:#E6F3EA;
+    --red:#C1382B;
+    --red-bg:#FBEAE8;
+    --blue:#3D5A80;
+    --blue-bg:#E8EEF4;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--sans);}
+  body{padding-bottom:76px;min-height:100vh;}
+  header{
+    background:var(--ink);color:#fff;padding:16px 18px 14px;
+    position:sticky;top:0;z-index:20;
+  }
+  header h1{margin:0;font-size:17px;letter-spacing:.02em;font-weight:700;}
+  header .sub{font-size:12px;color:#B9BEC4;margin-top:2px;font-family:var(--mono);}
+  header .who{
+    position:absolute;top:14px;right:16px;font-size:11px;color:#B9BEC4;
+    text-align:right;cursor:pointer;
+  }
+  header .who b{color:#fff;display:block;font-size:13px;}
+
+  main{padding:14px 14px 4px;max-width:640px;margin:0 auto;}
+
+  /* Bottom tab bar */
+  nav.tabs{
+    position:fixed;bottom:0;left:0;right:0;background:var(--ink);
+    display:flex;z-index:30;border-top:1px solid #000;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav.tabs button{
+    flex:1;background:none;border:none;color:#8B9096;padding:10px 4px 8px;
+    font-size:11px;font-weight:600;letter-spacing:.02em;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+  }
+  nav.tabs button .count{
+    background:var(--orange);color:#fff;border-radius:10px;font-size:10px;
+    padding:0 5px;min-width:16px;line-height:15px;position:relative;top:-1px;
+  }
+  nav.tabs button.active{color:#fff;}
+  nav.tabs button.active:after{content:'';display:block;width:22px;height:2px;background:var(--orange);margin-top:2px;}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* Ticket-style card */
+  .ticket{
+    background:var(--paper-card);border:1px solid var(--line);border-radius:10px;
+    margin-bottom:12px;overflow:hidden;position:relative;
+  }
+  .ticket-top{padding:12px 14px 10px;}
+  .ticket-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .ticket-job{font-weight:700;font-size:14.5px;}
+  .ticket-amount{font-family:var(--mono);font-weight:700;font-size:16px;}
+  .ticket-meta{font-size:12.5px;color:var(--ink-soft);margin-top:3px;line-height:1.5;}
+  .ticket-meta span{display:inline-block;margin-right:10px;}
+  .tear{
+    border-top:1px dashed var(--line);position:relative;
+  }
+  .tear:before,.tear:after{
+    content:'';position:absolute;top:-7px;width:14px;height:14px;background:var(--paper);
+    border-radius:50%;
+  }
+  .tear:before{left:-7px;}
+  .tear:after{right:-7px;}
+  .ticket-bottom{padding:10px 14px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .badge{
+    font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+    padding:3px 8px;border-radius:5px;
+  }
+  .badge.amber{background:var(--amber-bg);color:var(--amber);}
+  .badge.green{background:var(--green-bg);color:var(--green);}
+  .badge.red{background:var(--red-bg);color:var(--red);}
+  .badge.blue{background:var(--blue-bg);color:var(--blue);}
+
+  .btn{
+    appearance:none;border:none;border-radius:7px;padding:9px 14px;font-size:13px;
+    font-weight:700;cursor:pointer;font-family:var(--sans);
+  }
+  .btn.primary{background:var(--orange);color:#fff;}
+  .btn.primary:active{background:var(--orange-dark);}
+  .btn.ghost{background:none;border:1px solid var(--line);color:var(--ink);}
+  .btn.danger{background:var(--red-bg);color:var(--red);}
+  .btn.small{padding:6px 10px;font-size:12px;}
+  .btn:disabled{opacity:.5;}
+
+  a.link-btn{color:var(--blue);font-size:12.5px;font-weight:600;text-decoration:none;}
+
+  /* Form */
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;text-transform:uppercase;letter-spacing:.02em;}
+  .field input,.field select,.field textarea{
+    width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;
+    font-size:15px;background:#fff;color:var(--ink);font-family:var(--sans);
+  }
+  .field textarea{min-height:60px;resize:vertical;}
+  .radio-row{display:flex;gap:8px;}
+  .radio-row label{
+    flex:1;border:1px solid var(--line);border-radius:8px;padding:11px;text-align:center;
+    font-size:14px;font-weight:600;text-transform:none;letter-spacing:0;cursor:pointer;
+    background:#fff;
+  }
+  .radio-row input{display:none;}
+  .radio-row input:checked + span{color:var(--orange);}
+  .radio-row label:has(input:checked){border-color:var(--orange);background:#FFF3EA;}
+
+  .budget-check{
+    margin-top:8px;padding:10px 12px;border-radius:8px;font-size:12.5px;font-family:var(--mono);
+    display:none;
+  }
+  .budget-check.ok{display:block;background:var(--green-bg);color:var(--green);}
+  .budget-check.bad{display:block;background:var(--red-bg);color:var(--red);}
+  .budget-check.loading{display:block;background:var(--paper);color:var(--ink-soft);}
+
+  .empty{
+    text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:13.5px;
+  }
+  .toast{
+    position:fixed;bottom:86px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;
+    z-index:50;box-shadow:0 4px 14px rgba(0,0,0,.25);
+  }
+  .name-gate{
+    position:fixed;inset:0;background:var(--paper);z-index:100;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .name-gate .box{max-width:340px;width:100%;}
+  .name-gate h2{margin:0 0 6px;font-size:19px;}
+  .name-gate p{font-size:13.5px;color:var(--ink-soft);margin:0 0 16px;}
+  .notify-strip{
+    display:flex;align-items:center;justify-content:space-between;
+    background:#FFF3EA;border:1px solid #FFD9BB;color:var(--orange-dark);
+    padding:9px 12px;border-radius:8px;font-size:12.5px;margin-bottom:12px;
+  }
+  .notify-strip button{background:none;border:none;color:var(--orange-dark);font-weight:700;font-size:12.5px;text-decoration:underline;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="name-gate" id="nameGate">
+  <div class="box">
+    <h2>Who's this?</h2>
+    <p>Your name shows on requests and notifies you when there's an update.</p>
+    <div class="field">
+      <input id="nameInput" placeholder="First name" autocomplete="off" />
+    </div>
+    <button class="btn primary" style="width:100%" onclick="setName()">Continue</button>
+  </div>
+</div>
+
+<header>
+  <h1>PO Requests</h1>
+  <div class="sub">CLC Contractors</div>
+  <div class="who" onclick="changeName()"><b id="whoName">-</b>change</div>
+</header>
+
+<main>
+  <div class="notify-strip" id="notifyStrip" style="display:none">
+    <span>Turn on notifications for status updates</span>
+    <button onclick="enablePush()">Enable</button>
+  </div>
+
+  <!-- NEW REQUEST -->
+  <div class="view" id="view-new">
+    <div class="field">
+      <label>Jobsite</label>
+      <select id="jobSelect" onchange="onJobChange()"><option value="">Loading jobs…</option></select>
+    </div>
+    <div class="field">
+      <label>Budget line item</label>
+      <select id="lineSelect" onchange="onLineChange()" disabled><option value="">Select a job first</option></select>
+    </div>
+    <div class="field">
+      <label>Amount</label>
+      <input id="amountInput" type="number" step="0.01" inputmode="decimal" placeholder="0.00" onblur="runBudgetCheck()" />
+      <div class="budget-check" id="budgetCheck"></div>
+    </div>
+    <div class="field">
+      <label>Vendor</label>
+      <input id="vendorInput" placeholder="Vendor name" />
+    </div>
+    <div class="field">
+      <label>Pickup or delivery</label>
+      <div class="radio-row">
+        <label><input type="radio" name="fulfillment" value="Pickup" checked /><span>Pickup</span></label>
+        <label><input type="radio" name="fulfillment" value="Delivery" /><span>Delivery</span></label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Needed onsite by</label>
+      <input id="neededByInput" type="date" />
+    </div>
+    <div class="field">
+      <label>Photo or PDF of what you're ordering</label>
+      <input id="fileInput" type="file" accept="image/*,application/pdf" capture="environment" />
+    </div>
+    <div class="field">
+      <label>Notes (optional)</label>
+      <textarea id="notesInput" placeholder="Anything Danielle should know"></textarea>
+    </div>
+    <button class="btn primary" style="width:100%;padding:13px;font-size:15px" onclick="submitRequest()" id="submitBtn">Submit request</button>
+  </div>
+
+  <!-- NEEDS APPROVAL -->
+  <div class="view" id="view-pending">
+    <div id="pendingList"></div>
+  </div>
+
+  <!-- APPROVED / AWAITING PO# -->
+  <div class="view" id="view-approved">
+    <div id="approvedList"></div>
+  </div>
+
+  <!-- COMPLETE -->
+  <div class="view" id="view-complete">
+    <div id="completeList"></div>
+  </div>
+</main>
+
+<nav class="tabs">
+  <button data-view="new" class="active" onclick="switchTab('new')">New Request</button>
+  <button data-view="pending" onclick="switchTab('pending')">Needs Approval<span class="count" id="countPending" style="display:none"></span></button>
+  <button data-view="approved" onclick="switchTab('approved')">Approved<span class="count" id="countApproved" style="display:none"></span></button>
+  <button data-view="complete" onclick="switchTab('complete')">Complete</button>
+</nav>
+
+<script>
+const APPROVERS = ['danielle','chris','dee dee'];
+const VAPID_PUBLIC_KEY = 'BMaDjnJZbbEfd2qIHmub7v_NhV-ux3O6Y6s6N9w19zthvDnxPiYfwVH3ZFNEx5xIZL3Jln0dsUNU-Npabe-6Wfc';
+// Reuse the same Cloudinary account already set up for CLC Dispatch
+const CLOUDINARY_CLOUD_NAME = '__CLOUDINARY_CLOUD_NAME__';
+const CLOUDINARY_UPLOAD_PRESET = '__CLOUDINARY_UPLOAD_PRESET__';
+
+let selectedJobName = '';
+let selectedLineItemName = '';
+let lastBudgetCheck = null;
+let allRequests = [];
+
+function myName(){ return localStorage.getItem('clc_po_name') || ''; }
+function isApprover(){ return APPROVERS.includes(myName().toLowerCase().trim()); }
+
+function setName(){
+  const v = document.getElementById('nameInput').value.trim();
+  if(!v) return;
+  localStorage.setItem('clc_po_name', v);
+  document.getElementById('nameGate').style.display='none';
+  document.getElementById('whoName').textContent = v;
+  init();
+}
+function changeName(){
+  document.getElementById('nameGate').style.display='flex';
+  document.getElementById('nameInput').value = myName();
+}
+
+function switchTab(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+  document.querySelector('nav.tabs button[data-view="'+view+'"]').classList.add('active');
+  if(view!=='new') refreshRequests();
+}
+
+function toast(msg){
+  const t = document.createElement('div');
+  t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2600);
+}
+
+async function loadJobs(){
+  const sel = document.getElementById('jobSelect');
+  try{
+    const res = await fetch('/.netlify/functions/get-jobs');
+    const data = await res.json();
+    sel.innerHTML = '<option value="">Select jobsite…</option>' +
+      data.jobs.map(j=>`<option value="${j.id}" data-name="${j.name.replace(/"/g,'&quot;')}">${j.name}</option>`).join('');
+  }catch(e){
+    sel.innerHTML = '<option value="">Couldn\\'t load jobs - reload page</option>';
+  }
+}
+
+async function onJobChange(){
+  const sel = document.getElementById('jobSelect');
+  const jobId = sel.value;
+  const lineSel = document.getElementById('lineSelect');
+  selectedJobName = sel.selectedOptions[0] ? sel.selectedOptions[0].dataset.name : '';
+  document.getElementById('budgetCheck').className='budget-check';
+  if(!jobId){
+    lineSel.disabled = true;
+    lineSel.innerHTML = '<option value="">Select a job first</option>';
+    return;
+  }
+  lineSel.disabled = true;
+  lineSel.innerHTML = '<option value="">Loading line items…</option>';
+  try{
+    const res = await fetch('/.netlify/functions/get-cost-items?jobId='+encodeURIComponent(jobId));
+    const data = await res.json();
+    lineSel.innerHTML = '<option value="">Select line item…</option>' +
+      data.lineItems.map(li=>`<option value="${li.id}" data-name="${li.name.replace(/"/g,'&quot;')}">${li.costCode ? li.costCode+' — ' : ''}${li.name}</option>`).join('');
+    lineSel.disabled = false;
+  }catch(e){
+    lineSel.innerHTML = '<option value="">Couldn\\'t load line items</option>';
+  }
+}
+
+function onLineChange(){
+  const sel = document.getElementById('lineSelect');
+  selectedLineItemName = sel.selectedOptions[0] ? sel.selectedOptions[0].dataset.name : '';
+  document.getElementById('budgetCheck').className='budget-check';
+  runBudgetCheck();
+}
+
+async function runBudgetCheck(){
+  const costItemId = document.getElementById('lineSelect').value;
+  const amount = document.getElementById('amountInput').value;
+  const box = document.getElementById('budgetCheck');
+  if(!costItemId || !amount){ box.className='budget-check'; lastBudgetCheck=null; return; }
+  box.className='budget-check loading';
+  box.textContent = 'Checking budget…';
+  try{
+    const res = await fetch(`/.netlify/functions/check-budget?costItemId=${encodeURIComponent(costItemId)}&amount=${encodeURIComponent(amount)}`);
+    const data = await res.json();
+    lastBudgetCheck = data;
+    if(data.inBudget){
+      box.className='budget-check ok';
+      box.textContent = `IN BUDGET — $${data.remaining.toFixed(2)} remaining on this line`;
+    }else{
+      box.className='budget-check bad';
+      box.textContent = `OVER BUDGET — only $${data.remaining.toFixed(2)} remaining on this line`;
+    }
+  }catch(e){
+    box.className='budget-check';
+  }
+}
+
+async function uploadAttachment(){
+  const fileInput = document.getElementById('fileInput');
+  if(!fileInput.files || !fileInput.files[0]) return null;
+  const file = fileInput.files[0];
+  const form = new FormData();
+  form.append('file', file);
+  form.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, {
+    method:'POST', body: form
+  });
+  const data = await res.json();
+  return data.secure_url || null;
+}
+
+async function submitRequest(){
+  const jobId = document.getElementById('jobSelect').value;
+  const costItemId = document.getElementById('lineSelect').value;
+  const amount = document.getElementById('amountInput').value;
+  const vendor = document.getElementById('vendorInput').value.trim();
+  const fulfillment = document.querySelector('input[name="fulfillment"]:checked').value;
+  const neededBy = document.getElementById('neededByInput').value;
+  const notes = document.getElementById('notesInput').value.trim();
+
+  if(!jobId || !costItemId || !amount || !vendor){
+    toast('Fill in jobsite, line item, amount, and vendor');
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+
+  try{
+    let attachmentUrl = null;
+    if(document.getElementById('fileInput').files.length){
+      attachmentUrl = await uploadAttachment();
+    }
+
+    const res = await fetch('/.netlify/functions/submit-request', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        jobId, jobName: selectedJobName,
+        costItemId, lineItemName: selectedLineItemName,
+        amount, vendor, fulfillment, neededBy,
+        requestedBy: myName(),
+        attachmentUrl, notes
+      })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Failed');
+
+    toast(data.inBudget ? 'Request submitted - in budget' : 'Request submitted - flagged over budget');
+    document.getElementById('amountInput').value='';
+    document.getElementById('vendorInput').value='';
+    document.getElementById('neededByInput').value='';
+    document.getElementById('notesInput').value='';
+    document.getElementById('fileInput').value='';
+    document.getElementById('budgetCheck').className='budget-check';
+    switchTab('pending');
+  }catch(e){
+    toast('Error: '+e.message);
+  }finally{
+    btn.disabled=false; btn.textContent='Submit request';
+  }
+}
+
+function money(n){ return '$'+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function ticketHTML(r, kind){
+  const budgetBadge = r['Budget Status']==='Over Budget'
+    ? '<span class="badge red">Over budget</span>'
+    : '<span class="badge green">In budget</span>';
+
+  let statusBadge = '';
+  if(r.Status==='Pending Review') statusBadge = '<span class="badge amber">Pending</span>';
+  if(r.Status==='Needs Info') statusBadge = '<span class="badge red">Needs info</span>';
+  if(r.Status==='Approved') statusBadge = '<span class="badge green">Approved</span>';
+  if(r.Status==='PO Assigned') statusBadge = `<span class="badge blue">PO #${r['PO Number']||''}</span>`;
+  if(r.Status==='Rejected') statusBadge = '<span class="badge red">Rejected</span>';
+
+  let attachmentLink = r.Attachment && r.Attachment[0]
+    ? `<a class="link-btn" href="${r.Attachment[0].url}" target="_blank">View attachment</a>` : '';
+
+  let actions = '';
+  if(kind==='pending' && isApprover()){
+    actions = `
+      <button class="btn primary small" onclick="doAction('${r.id}','approve')">Approve</button>
+      <button class="btn ghost small" onclick="doNeedsInfo('${r.id}')">Needs info</button>
+      <button class="btn danger small" onclick="doReject('${r.id}')">Reject</button>`;
+  }
+  if(kind==='approved'){
+    actions = `
+      <input id="po-${r.id}" placeholder="PO #" style="width:90px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;font-family:var(--mono);font-size:13px" />
+      <button class="btn primary small" onclick="assignPO('${r.id}')">Save PO#</button>`;
+  }
+
+  return `
+  <div class="ticket">
+    <div class="ticket-top">
+      <div class="ticket-row">
+        <div class="ticket-job">${r['Job Name']||''}</div>
+        <div class="ticket-amount">${money(r.Amount)}</div>
+      </div>
+      <div class="ticket-meta">
+        <span>${r['Budget Line Item']||''}</span><br/>
+        <span>${r.Vendor||''}</span>
+        <span>${r.Fulfillment||''}</span>
+        ${r['Needed By'] ? '<span>Need by '+r['Needed By']+'</span>' : ''}
+      </div>
+      <div class="ticket-meta">Requested by ${r['Requested By']||'—'}</div>
+      ${r.Notes ? '<div class="ticket-meta">Note: '+r.Notes+'</div>' : ''}
+    </div>
+    <div class="tear"></div>
+    <div class="ticket-bottom">
+      ${statusBadge} ${budgetBadge} ${attachmentLink}
+      <div style="flex:1"></div>
+      ${actions}
+    </div>
+  </div>`;
+}
+
+function doNeedsInfo(id){
+  const note = prompt('What does the requester need to clarify?');
+  if(note===null) return;
+  doAction(id,'needs_info', note);
+}
+function doReject(id){
+  const note = prompt('Reason for rejecting (shown to requester):');
+  if(note===null) return;
+  doAction(id,'reject', note);
+}
+async function doAction(id, action, note){
+  try{
+    const res = await fetch('/.netlify/functions/update-status', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ recordId:id, action, actorName: myName(), note })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Failed');
+    toast('Updated');
+    refreshRequests();
+  }catch(e){ toast('Error: '+e.message); }
+}
+async function assignPO(id){
+  const val = document.getElementById('po-'+id).value.trim();
+  if(!val){ toast('Enter a PO number first'); return; }
+  try{
+    const res = await fetch('/.netlify/functions/update-status', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ recordId:id, action:'assign_po', actorName: myName(), poNumber: val })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Failed');
+    toast('PO # saved');
+    refreshRequests();
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+async function refreshRequests(){
+  try{
+    const res = await fetch('/.netlify/functions/get-requests');
+    const data = await res.json();
+    allRequests = data.records || [];
+    renderLists();
+  }catch(e){ /* keep last known list on failure */ }
+}
+
+function renderLists(){
+  const pending = allRequests.filter(r=>r.Status==='Pending Review' || r.Status==='Needs Info');
+  const approved = allRequests.filter(r=>r.Status==='Approved');
+  const complete = allRequests.filter(r=>r.Status==='PO Assigned' || r.Status==='Rejected');
+
+  document.getElementById('pendingList').innerHTML = pending.length
+    ? pending.map(r=>ticketHTML(r,'pending')).join('')
+    : '<div class="empty">Nothing waiting on approval.</div>';
+
+  document.getElementById('approvedList').innerHTML = approved.length
+    ? approved.map(r=>ticketHTML(r,'approved')).join('')
+    : '<div class="empty">Nothing approved and waiting on a PO # yet.</div>';
+
+  document.getElementById('completeList').innerHTML = complete.length
+    ? complete.map(r=>ticketHTML(r,'complete')).join('')
+    : '<div class="empty">No completed requests yet.</div>';
+
+  const countPending = document.getElementById('countPending');
+  const countApproved = document.getElementById('countApproved');
+  if(pending.length){ countPending.style.display='inline-block'; countPending.textContent = pending.length; }
+  else countPending.style.display='none';
+  if(approved.length){ countApproved.style.display='inline-block'; countApproved.textContent = approved.length; }
+  else countApproved.style.display='none';
+}
+
+// --- Push notifications ---
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function enablePush(){
+  try{
+    if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+      toast('Notifications not supported on this browser');
+      return;
+    }
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const permission = await Notification.requestPermission();
+    if(permission !== 'granted'){ toast('Notifications blocked'); return; }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    await fetch('/.netlify/functions/save-subscription', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name: myName(), subscription: sub })
+    });
+    document.getElementById('notifyStrip').style.display='none';
+    localStorage.setItem('clc_po_push_enabled','1');
+    toast('Notifications on');
+  }catch(e){ toast('Couldn\\'t enable notifications: '+e.message); }
+}
+
+function init(){
+  document.getElementById('whoName').textContent = myName();
+  loadJobs();
+  refreshRequests();
+  setInterval(refreshRequests, 30000);
+  if(!localStorage.getItem('clc_po_push_enabled')){
+    document.getElementById('notifyStrip').style.display='flex';
+  }
+}
+
+if(myName()){
+  document.getElementById('nameGate').style.display='none';
+  init();
+}
+</script>
+</body>
+</html>
