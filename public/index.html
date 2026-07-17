@@ -365,6 +365,9 @@ async function uploadAttachment(){
     method:'POST', body: form
   });
   const data = await res.json();
+  if(!res.ok || data.error){
+    throw new Error('Cloudinary: ' + (data.error ? data.error.message : ('HTTP '+res.status)));
+  }
   return data.secure_url || null;
 }
 
