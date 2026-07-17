@@ -22,7 +22,7 @@ async function airtableCreate(table, fields) {
   const res = await fetch(`${BASE_URL}/${baseId()}/${encodeURIComponent(table)}`, {
     method: "POST",
     headers: authHeaders(),
-    body: JSON.stringify({ fields }),
+    body: JSON.stringify({ fields, typecast: true }),
   });
   const data = await res.json();
   if (data.error) throw new Error("Airtable create error: " + JSON.stringify(data.error));
@@ -33,7 +33,7 @@ async function airtableUpdate(table, recordId, fields) {
   const res = await fetch(`${BASE_URL}/${baseId()}/${encodeURIComponent(table)}/${recordId}`, {
     method: "PATCH",
     headers: authHeaders(),
-    body: JSON.stringify({ fields }),
+    body: JSON.stringify({ fields, typecast: true }),
   });
   const data = await res.json();
   if (data.error) throw new Error("Airtable update error: " + JSON.stringify(data.error));
