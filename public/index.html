@@ -316,8 +316,27 @@ async function onJobChange(){
   try{
     const res = await fetch('/.netlify/functions/get-cost-items?jobId='+encodeURIComponent(jobId));
     const data = await res.json();
-    lineSel.innerHTML = '<option value="">Select line item…</option>' +
-      data.lineItems.map(li=>`<option value="${li.id}" data-name="${li.name.replace(/"/g,'&quot;')}">${li.costCode ? li.costCode+' — ' : ''}${li.name}</option>`).join('');
+
+    // Group line items under their cost code so the list reads like the
+    // actual budget hierarchy instead of one long flat scroll.
+    const groups = {};
+    const groupOrder = [];
+    data.lineItems.forEach(li=>{
+      const key = li.costCode || 'Other';
+      if(!groups[key]){ groups[key]=[]; groupOrder.push(key); }
+      groups[key].push(li);
+    });
+
+    let html = '<option value="">Select line item…</option>';
+    groupOrder.forEach(key=>{
+      html += `<optgroup label="${key.replace(/"/g,'&quot;')}">`;
+      groups[key].forEach(li=>{
+        html += `<option value="${li.id}" data-name="${li.name.replace(/"/g,'&quot;')}">${li.name}</option>`;
+      });
+      html += '</optgroup>';
+    });
+
+    lineSel.innerHTML = html;
     lineSel.disabled = false;
   }catch(e){
     lineSel.innerHTML = '<option value="">Couldn&#39;t load line items</option>';
