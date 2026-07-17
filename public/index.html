@@ -163,7 +163,7 @@
     <h2>Who's this?</h2>
     <p>Your name shows on requests and notifies you when there's an update.</p>
     <div class="field">
-      <input id="nameInput" placeholder="First name" autocomplete="off" />
+      <input id="nameInput" placeholder="First name" autocomplete="off" onkeydown="if(event.key==='Enter') setName()" />
     </div>
     <button class="btn primary" style="width:100%" onclick="setName()">Continue</button>
   </div>
@@ -249,8 +249,8 @@
 const APPROVERS = ['danielle','chris','dee dee'];
 const VAPID_PUBLIC_KEY = 'BMaDjnJZbbEfd2qIHmub7v_NhV-ux3O6Y6s6N9w19zthvDnxPiYfwVH3ZFNEx5xIZL3Jln0dsUNU-Npabe-6Wfc';
 // Reuse the same Cloudinary account already set up for CLC Dispatch
-const CLOUDINARY_CLOUD_NAME = '__CLOUDINARY_CLOUD_NAME__';
-const CLOUDINARY_UPLOAD_PRESET = '__CLOUDINARY_UPLOAD_PRESET__';
+const CLOUDINARY_CLOUD_NAME = 'atgobb8c';
+const CLOUDINARY_UPLOAD_PRESET = '0faea82872894332fa8104407f902e';
 
 let selectedJobName = '';
 let selectedLineItemName = '';
@@ -360,9 +360,8 @@ async function uploadAttachment(){
   const file = fileInput.files[0];
   const form = new FormData();
   form.append('file', file);
-  form.append('upload_preset', 0faea82872894332fa8104407f902e
-atgobb8c);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${atgobb8c}/auto/upload`, {
+  form.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, {
     method:'POST', body: form
   });
   const data = await res.json();
