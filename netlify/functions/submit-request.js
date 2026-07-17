@@ -2,7 +2,7 @@ const { jobtreadQuery } = require("./_jobtread");
 const { airtableCreate } = require("./_airtable");
 const { notifyByName } = require("./_notify");
 
-const APPROVERS = ["Danielle", "Chris", "Dee Dee"];
+const APPROVERS = ["Danielle", "Chris", "Dedi"];
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
