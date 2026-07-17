@@ -31,6 +31,7 @@ exports.handler = async (event) => {
               name: {},
               cost: {},
               costCode: { name: {} },
+              hasFinalActualCost: {},
             },
             nextPage: {},
           },
@@ -38,8 +39,11 @@ exports.handler = async (event) => {
       });
 
       const nodes = data.job.costItems.nodes || [];
+      // Skip line items marked complete/finalized in JobTread - keeps the
+      // dropdown down to only what's still active/open on the budget.
+      const openItems = nodes.filter((c) => !c.hasFinalActualCost);
       lineItems = lineItems.concat(
-        nodes.map((c) => ({
+        openItems.map((c) => ({
           id: c.id,
           name: c.name,
           costCode: c.costCode ? c.costCode.name : null,
