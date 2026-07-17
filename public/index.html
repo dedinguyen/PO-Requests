@@ -344,10 +344,10 @@ async function runBudgetCheck(){
     lastBudgetCheck = data;
     if(data.inBudget){
       box.className='budget-check ok';
-      box.textContent = `IN BUDGET — $${data.remaining.toFixed(2)} remaining on this line`;
+      box.textContent = 'IN BUDGET';
     }else{
       box.className='budget-check bad';
-      box.textContent = `OVER BUDGET — only $${data.remaining.toFixed(2)} remaining on this line`;
+      box.textContent = 'OVER BUDGET';
     }
   }catch(e){
     box.className='budget-check';
