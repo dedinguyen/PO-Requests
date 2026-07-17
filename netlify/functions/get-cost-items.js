@@ -31,6 +31,7 @@ exports.handler = async (event) => {
               name: {},
               cost: {},
               costCode: { name: {} },
+              costType: { name: {} },
               hasFinalActualCost: {},
             },
             nextPage: {},
@@ -39,9 +40,11 @@ exports.handler = async (event) => {
       });
 
       const nodes = data.job.costItems.nodes || [];
-      // Skip line items marked complete/finalized in JobTread - keeps the
-      // dropdown down to only what's still active/open on the budget.
-      const openItems = nodes.filter((c) => !c.hasFinalActualCost);
+      // Skip line items marked complete/finalized in JobTread, and skip
+      // Labor - those are clocked hours, not something that gets a PO.
+      const openItems = nodes.filter(
+        (c) => !c.hasFinalActualCost && (!c.costType || c.costType.name !== "Labor")
+      );
       lineItems = lineItems.concat(
         openItems.map((c) => ({
           id: c.id,
