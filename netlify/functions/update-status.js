@@ -1,7 +1,7 @@
 const { airtableUpdate, airtableList } = require("./_airtable");
 const { notifyByName } = require("./_notify");
 
-const APPROVERS = ["danielle", "chris", "dee dee"];
+const APPROVERS = ["danielle", "chris", "dedi"];
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -25,7 +25,7 @@ exports.handler = async (event) => {
       if (!APPROVERS.includes(actorName.toLowerCase().trim())) {
         return {
           statusCode: 403,
-          body: JSON.stringify({ error: "Only Danielle, Chris, or Dee Dee can approve requests" }),
+          body: JSON.stringify({ error: "Only Danielle, Chris, or Dedi can approve requests" }),
         };
       }
     }
@@ -39,7 +39,7 @@ exports.handler = async (event) => {
       fields["Approved By"] = actorName;
       fields["Approved At"] = new Date().toISOString();
       notifyTitle = "PO approved";
-      notifyBody = "Your PO request was approved. Enter it in JobTread and add the PO#.";
+      notifyBody = "Your PO is approved, stand by for your PO number to be assigned.";
     } else if (action === "needs_info") {
       fields.Status = "Needs Info";
       fields.Notes = note || "";
