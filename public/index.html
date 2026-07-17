@@ -296,7 +296,7 @@ async function loadJobs(){
     sel.innerHTML = '<option value="">Select jobsite…</option>' +
       data.jobs.map(j=>`<option value="${j.id}" data-name="${j.name.replace(/"/g,'&quot;')}">${j.name}</option>`).join('');
   }catch(e){
-    sel.innerHTML = '<option value="">Couldn\\'t load jobs - reload page</option>';
+    sel.innerHTML = '<option value="">Couldn&#39;t load jobs - reload page</option>';
   }
 }
 
@@ -320,7 +320,7 @@ async function onJobChange(){
       data.lineItems.map(li=>`<option value="${li.id}" data-name="${li.name.replace(/"/g,'&quot;')}">${li.costCode ? li.costCode+' — ' : ''}${li.name}</option>`).join('');
     lineSel.disabled = false;
   }catch(e){
-    lineSel.innerHTML = '<option value="">Couldn\\'t load line items</option>';
+    lineSel.innerHTML = '<option value="">Couldn&#39;t load line items</option>';
   }
 }
 
@@ -360,8 +360,9 @@ async function uploadAttachment(){
   const file = fileInput.files[0];
   const form = new FormData();
   form.append('file', file);
-  form.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, {
+  form.append('upload_preset', 0faea82872894332fa8104407f902e
+atgobb8c);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${atgobb8c}/auto/upload`, {
     method:'POST', body: form
   });
   const data = await res.json();
@@ -574,7 +575,7 @@ async function enablePush(){
     document.getElementById('notifyStrip').style.display='none';
     localStorage.setItem('clc_po_push_enabled','1');
     toast('Notifications on');
-  }catch(e){ toast('Couldn\\'t enable notifications: '+e.message); }
+  }catch(e){ toast('Couldn&#39;t enable notifications: '+e.message); }
 }
 
 function init(){
