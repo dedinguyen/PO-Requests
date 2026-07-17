@@ -7,33 +7,50 @@ exports.handler = async (event) => {
   }
 
   try {
-    const data = await jobtreadQuery({
-      job: {
-        $: { id: jobId },
-        costItems: {
-          // Master budget line items only - excludes items that live on a specific
-          // vendor order/document (those nest under the master line, not this list).
-          $: {
-            size: 500,
-            where: [["document", "id"], null],
-            sortBy: [{ field: "name", order: "asc" }],
-          },
-          nodes: {
-            id: {},
-            name: {},
-            cost: {},
-            costCode: { name: {} },
+    let lineItems = [];
+    let page = undefined;
+    let safety = 0;
+
+    // Paginate - a full build's budget can easily exceed JobTread's 100-per-request cap
+    while (safety < 10) {
+      safety++;
+      const data = await jobtreadQuery({
+        job: {
+          $: { id: jobId },
+          costItems: {
+            // Master budget line items only - excludes items that live on a specific
+            // vendor order/document (those nest under the master line, not this list).
+            $: {
+              size: 100,
+              page,
+              where: [["document", "id"], null],
+              sortBy: [{ field: "name", order: "asc" }],
+            },
+            nodes: {
+              id: {},
+              name: {},
+              cost: {},
+              costCode: { name: {} },
+            },
+            nextPage: {},
           },
         },
-      },
-    });
+      });
 
-    const lineItems = data.job.costItems.nodes.map((c) => ({
-      id: c.id,
-      name: c.name,
-      costCode: c.costCode ? c.costCode.name : null,
-      budget: c.cost,
-    }));
+      const nodes = data.job.costItems.nodes || [];
+      lineItems = lineItems.concat(
+        nodes.map((c) => ({
+          id: c.id,
+          name: c.name,
+          costCode: c.costCode ? c.costCode.name : null,
+          budget: c.cost,
+        }))
+      );
+
+      const next = data.job.costItems.nextPage;
+      if (!next) break;
+      page = next;
+    }
 
     return {
       statusCode: 200,
