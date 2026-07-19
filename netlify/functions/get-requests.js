@@ -15,9 +15,17 @@ exports.handler = async () => {
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ records }),
+      body: JSON.stringify({
+        records,
+        _debug: {
+          baseIdUsed: (process.env.AIRTABLE_BASE_ID || "MISSING").slice(0, 6) + "...",
+          apiKeyPrefix: (process.env.AIRTABLE_API_KEY || "MISSING").slice(0, 8) + "...",
+          recordCountFromAirtable: (data.records || []).length,
+        },
+      }),
     };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
+
