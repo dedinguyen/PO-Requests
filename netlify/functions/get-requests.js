@@ -1,4 +1,4 @@
-cconst { airtableList } = require("./_airtable");
+const { airtableList } = require("./_airtable");
 
 exports.handler = async () => {
   try {
