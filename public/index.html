@@ -241,6 +241,9 @@
       <textarea id="notesInput" placeholder="Anything Danielle should know"></textarea>
     </div>
     <button class="btn primary" style="width:100%;padding:13px;font-size:15px" onclick="submitRequest()" id="submitBtn">Submit request</button>
+    <div style="text-align:center;margin-top:10px;display:none" id="cancelEditRow">
+      <a href="#" class="link-btn" onclick="cancelEdit();return false;">Cancel edit</a>
+    </div>
   </div>
 
   <!-- NEEDS APPROVAL -->
@@ -274,6 +277,7 @@ const CLOUDINARY_CLOUD_NAME = 'atgobb8c';
 const CLOUDINARY_UPLOAD_PRESET = 'kanpyjxw';
 
 let selectedJobName = '';
+let editingRecordId = null;
 let selectedLineItemName = '';
 let lastBudgetCheck = null;
 let allRequests = [];
@@ -433,7 +437,8 @@ async function submitRequest(){
   }
 
   const btn = document.getElementById('submitBtn');
-  btn.disabled = true; btn.textContent = 'Submitting…';
+  const isEditing = !!editingRecordId;
+  btn.disabled = true; btn.textContent = isEditing ? 'Saving…' : 'Submitting…';
 
   try{
     let attachmentUrl = null;
@@ -441,33 +446,75 @@ async function submitRequest(){
       attachmentUrl = await uploadAttachment();
     }
 
-    const res = await fetch('/.netlify/functions/submit-request', {
+    const endpoint = isEditing ? '/.netlify/functions/update-request' : '/.netlify/functions/submit-request';
+    const payload = isEditing
+      ? { recordId: editingRecordId, actorName: myName(),
+          jobId, jobName: selectedJobName, costItemId, lineItemName: selectedLineItemName,
+          amount, vendor, fulfillment, neededBy, attachmentUrl, notes }
+      : { jobId, jobName: selectedJobName, costItemId, lineItemName: selectedLineItemName,
+          amount, vendor, fulfillment, neededBy, requestedBy: myName(), attachmentUrl, notes };
+
+    const res = await fetch(endpoint, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        jobId, jobName: selectedJobName,
-        costItemId, lineItemName: selectedLineItemName,
-        amount, vendor, fulfillment, neededBy,
-        requestedBy: myName(),
-        attachmentUrl, notes
-      })
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
     if(!res.ok) throw new Error(data.error || 'Failed');
 
-    toast(data.inBudget ? 'Request submitted - in budget' : 'Request submitted - flagged over budget');
+    toast(data.inBudget
+      ? (isEditing ? 'Request updated - in budget' : 'Request submitted - in budget')
+      : (isEditing ? 'Request updated - flagged over budget' : 'Request submitted - flagged over budget'));
+    document.getElementById('jobSelect').value='';
+    document.getElementById('lineSelect').innerHTML = '<option value="">Select a job first</option>';
+    document.getElementById('lineSelect').disabled = true;
     document.getElementById('amountInput').value='';
     document.getElementById('vendorInput').value='';
     document.getElementById('neededByInput').value='';
     document.getElementById('notesInput').value='';
     document.getElementById('fileInput').value='';
     document.getElementById('budgetCheck').className='budget-check';
+    cancelEdit();
     switchTab('pending');
   }catch(e){
     toast('Error: '+e.message);
   }finally{
-    btn.disabled=false; btn.textContent='Submit request';
+    btn.disabled=false; btn.textContent = editingRecordId ? 'Save changes' : 'Submit request';
   }
+}
+
+async function startEdit(recordId){
+  const r = allRequests.find(x=>x.id===recordId);
+  if(!r) return;
+  editingRecordId = recordId;
+  switchTab('new');
+  document.getElementById('submitBtn').textContent = 'Save changes';
+  document.getElementById('cancelEditRow').style.display = 'block';
+
+  document.getElementById('amountInput').value = r.Amount || '';
+  document.getElementById('vendorInput').value = r.Vendor || '';
+  document.getElementById('neededByInput').value = r['Needed By'] || '';
+  document.getElementById('notesInput').value = r.Notes || '';
+  const fulfillmentRadio = document.querySelector(`input[name="fulfillment"][value="${r.Fulfillment||'Pickup'}"]`);
+  if(fulfillmentRadio) fulfillmentRadio.checked = true;
+
+  // Jobs list should already be loaded from init(); wait briefly if not
+  const jobSel = document.getElementById('jobSelect');
+  if(jobSel.options.length <= 1){ await loadJobs(); }
+  jobSel.value = r['Job ID'] || '';
+  selectedJobName = r['Job Name'] || '';
+  await onJobChange();
+
+  const lineSel = document.getElementById('lineSelect');
+  lineSel.value = r['Cost Item ID'] || '';
+  selectedLineItemName = r['Budget Line Item'] || '';
+  runBudgetCheck();
+}
+
+function cancelEdit(){
+  editingRecordId = null;
+  document.getElementById('submitBtn').textContent = 'Submit request';
+  document.getElementById('cancelEditRow').style.display = 'none';
 }
 
 function money(n){ return '$'+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -488,11 +535,15 @@ function ticketHTML(r, kind){
     ? `<a class="link-btn" href="${r.Attachment[0].url}" target="_blank">View attachment</a>` : '';
 
   let actions = '';
+  const isMine = (r['Requested By']||'').toLowerCase().trim() === myName().toLowerCase().trim();
   if(kind==='pending' && isApprover()){
     actions = `
       <button class="btn primary small" onclick="doAction('${r.id}','approve')">Approve</button>
       <button class="btn ghost small" onclick="doNeedsInfo('${r.id}')">Needs info</button>
       <button class="btn danger small" onclick="doReject('${r.id}')">Reject</button>`;
+  }
+  if(kind==='pending' && isMine){
+    actions += `<button class="btn ghost small" onclick="startEdit('${r.id}')">Edit</button>`;
   }
   if(kind==='approved'){
     actions = `
