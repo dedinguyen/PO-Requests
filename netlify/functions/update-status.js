@@ -62,7 +62,10 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: "Unknown action" }) };
     }
 
-    await airtableUpdate("PO Requests", recordId, fields);
+    await airtableUpdate("PO Requests", recordId, {
+      ...fields,
+      "Status Updated At": new Date().toISOString(),
+    });
 
     // Look up who requested it, so we can notify them directly
     const existing = await airtableList(
