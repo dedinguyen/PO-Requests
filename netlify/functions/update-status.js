@@ -34,6 +34,7 @@ async function tryCreatePOInJobTread(record) {
           toOrganizationName: vendorName,
           taxRate: 0,
           jobLocationName: f["Job Name"] || "Jobsite",
+          dueDays: 30,
           lineItems: [
             {
               _type: "costItem",
