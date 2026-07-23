@@ -217,9 +217,11 @@
       <input id="amountInput" type="number" step="0.01" inputmode="decimal" placeholder="0.00" onblur="runBudgetCheck()" />
       <div class="budget-check" id="budgetCheck"></div>
     </div>
-    <div class="field">
+    <div class="field" style="position:relative">
       <label>Vendor</label>
-      <input id="vendorInput" placeholder="Vendor name" />
+      <input id="vendorInput" placeholder="Start typing vendor name…" autocomplete="off"
+        oninput="filterVendors()" onfocus="filterVendors()" />
+      <div id="vendorResults" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:15;background:#fff;border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;box-shadow:0 6px 16px rgba(0,0,0,.12)"></div>
     </div>
     <div class="field">
       <label>Pickup or delivery</label>
@@ -318,6 +320,37 @@ function toast(msg){
   t.className='toast'; t.textContent=msg;
   document.body.appendChild(t);
   setTimeout(()=>t.remove(), 2600);
+}
+
+let allVendors = [];
+let selectedVendorId = null;
+async function loadVendors(){
+  try{
+    const res = await fetch('/.netlify/functions/get-vendors');
+    const data = await res.json();
+    allVendors = data.vendors || [];
+  }catch(e){ /* filterVendors will just show nothing until this loads */ }
+}
+function filterVendors(){
+  const q = document.getElementById('vendorInput').value.trim().toLowerCase();
+  selectedVendorId = null;
+  const box = document.getElementById('vendorResults');
+  if(!q){ box.style.display='none'; box.innerHTML=''; return; }
+  const matches = allVendors.filter(v=>v.name.toLowerCase().includes(q)).slice(0,8);
+  if(!matches.length){
+    box.innerHTML = '<div style="padding:10px 12px;color:var(--ink-soft);font-size:13.5px">No matching vendor - keep typing or check spelling</div>';
+    box.style.display='block';
+    return;
+  }
+  box.innerHTML = matches.map(v=>
+    `<div style="padding:10px 12px;font-size:14.5px;border-bottom:1px solid var(--line);cursor:pointer" onclick="selectVendor('${v.id}', '${v.name.replace(/'/g,"&#39;")}')">${v.name}</div>`
+  ).join('');
+  box.style.display='block';
+}
+function selectVendor(id, name){
+  selectedVendorId = id;
+  document.getElementById('vendorInput').value = name;
+  document.getElementById('vendorResults').style.display='none';
 }
 
 async function loadJobs(){
@@ -435,6 +468,10 @@ async function submitRequest(){
     toast('Fill in jobsite, line item, amount, and vendor');
     return;
   }
+  if(!selectedVendorId){
+    toast('Pick the vendor from the dropdown list, not just typed text');
+    return;
+  }
 
   const btn = document.getElementById('submitBtn');
   const isEditing = !!editingRecordId;
@@ -450,9 +487,9 @@ async function submitRequest(){
     const payload = isEditing
       ? { recordId: editingRecordId, actorName: myName(),
           jobId, jobName: selectedJobName, costItemId, lineItemName: selectedLineItemName,
-          amount, vendor, fulfillment, neededBy, attachmentUrl, notes }
+          amount, vendor, vendorId: selectedVendorId, fulfillment, neededBy, attachmentUrl, notes }
       : { jobId, jobName: selectedJobName, costItemId, lineItemName: selectedLineItemName,
-          amount, vendor, fulfillment, neededBy, requestedBy: myName(), attachmentUrl, notes };
+          amount, vendor, vendorId: selectedVendorId, fulfillment, neededBy, requestedBy: myName(), attachmentUrl, notes };
 
     const res = await fetch(endpoint, {
       method:'POST',
@@ -470,6 +507,7 @@ async function submitRequest(){
     document.getElementById('lineSelect').disabled = true;
     document.getElementById('amountInput').value='';
     document.getElementById('vendorInput').value='';
+    selectedVendorId = null;
     document.getElementById('neededByInput').value='';
     document.getElementById('notesInput').value='';
     document.getElementById('fileInput').value='';
@@ -493,6 +531,7 @@ async function startEdit(recordId){
 
   document.getElementById('amountInput').value = r.Amount || '';
   document.getElementById('vendorInput').value = r.Vendor || '';
+  selectedVendorId = r['Vendor ID'] || null;
   document.getElementById('neededByInput').value = r['Needed By'] || '';
   document.getElementById('notesInput').value = r.Notes || '';
   const fulfillmentRadio = document.querySelector(`input[name="fulfillment"][value="${r.Fulfillment||'Pickup'}"]`);
@@ -687,6 +726,7 @@ async function enablePush(){
 function init(){
   document.getElementById('whoName').textContent = myName();
   loadJobs();
+  loadVendors();
   refreshRequests();
   setInterval(()=>{ if(document.visibilityState==='visible') refreshRequests(); }, 90000);
   document.addEventListener('visibilitychange', ()=>{
