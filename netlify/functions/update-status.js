@@ -65,10 +65,14 @@ async function tryCreatePOInJobTread(record) {
     });
 
     const readBack = await jobtreadQuery({
-      document: { $: { id: docId }, number: {} },
+      document: { $: { id: docId }, job: { number: {} }, number: {} },
     });
 
-    return { number: readBack.document ? readBack.document.number : null, error: null };
+    const docNumber = readBack.document ? readBack.document.number : null;
+    const jobNumber = readBack.document && readBack.document.job ? readBack.document.job.number : null;
+    const fullPoNumber = docNumber && jobNumber ? `${jobNumber}-${docNumber}` : docNumber;
+
+    return { number: fullPoNumber, error: null };
   } catch (err) {
     return { number: null, error: err.message };
   }
