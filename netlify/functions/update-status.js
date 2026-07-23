@@ -61,7 +61,6 @@ async function tryCreatePOInJobTread(record) {
     await jobtreadQuery({
       updateDocument: {
         $: { id: docId, status: "approved" },
-        updatedDocument: { id: {} },
       },
     });
 
