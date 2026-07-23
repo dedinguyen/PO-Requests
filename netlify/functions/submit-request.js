@@ -18,6 +18,7 @@ exports.handler = async (event) => {
       lineItemName,
       amount,
       vendor,
+      vendorId,
       fulfillment, // "Pickup" or "Delivery"
       neededBy,
       requestedBy,
@@ -66,6 +67,7 @@ exports.handler = async (event) => {
       "Cost Item ID": costItemId,
       Amount: parseFloat(amount),
       Vendor: vendor,
+      "Vendor ID": vendorId || "",
       Fulfillment: fulfillment,
       "Needed By": neededBy,
       "Requested By": requestedBy,
