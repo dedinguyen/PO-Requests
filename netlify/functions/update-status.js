@@ -35,12 +35,11 @@ async function tryCreatePOInJobTread(record) {
           taxRate: 0,
           lineItems: [
             {
-              newCostItem: {
-                jobCostItemId: costItemId,
-                name: lineItemName,
-                quantity: 1,
-                unitCost: amount,
-              },
+              _type: "costItem",
+              jobCostItemId: costItemId,
+              name: lineItemName,
+              quantity: 1,
+              unitCost: amount,
             },
           ],
         },
