@@ -222,6 +222,7 @@
       <input id="vendorInput" placeholder="Start typing vendor name…" autocomplete="off"
         oninput="filterVendors()" onfocus="filterVendors()" />
       <div id="vendorResults" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:15;background:#fff;border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;box-shadow:0 6px 16px rgba(0,0,0,.12)"></div>
+      <a href="#" id="vendorChangeLink" class="link-btn" style="display:none;margin-top:6px" onclick="clearVendorSelection();return false;">Change vendor</a>
     </div>
     <div class="field">
       <label>Pickup or delivery</label>
@@ -332,6 +333,7 @@ async function loadVendors(){
   }catch(e){ /* filterVendors will just show nothing until this loads */ }
 }
 function filterVendors(){
+  if(document.getElementById('vendorInput').readOnly) return;
   const q = document.getElementById('vendorInput').value.trim().toLowerCase();
   selectedVendorId = null;
   const box = document.getElementById('vendorResults');
@@ -349,8 +351,19 @@ function filterVendors(){
 }
 function selectVendor(id, name){
   selectedVendorId = id;
-  document.getElementById('vendorInput').value = name;
+  const input = document.getElementById('vendorInput');
+  input.value = name;
+  input.readOnly = true;
   document.getElementById('vendorResults').style.display='none';
+  document.getElementById('vendorChangeLink').style.display='inline-block';
+}
+function clearVendorSelection(){
+  selectedVendorId = null;
+  const input = document.getElementById('vendorInput');
+  input.value = '';
+  input.readOnly = false;
+  document.getElementById('vendorChangeLink').style.display='none';
+  input.focus();
 }
 
 async function loadJobs(){
@@ -507,6 +520,8 @@ async function submitRequest(){
     document.getElementById('lineSelect').disabled = true;
     document.getElementById('amountInput').value='';
     document.getElementById('vendorInput').value='';
+    document.getElementById('vendorInput').readOnly = false;
+    document.getElementById('vendorChangeLink').style.display='none';
     selectedVendorId = null;
     document.getElementById('neededByInput').value='';
     document.getElementById('notesInput').value='';
@@ -532,6 +547,8 @@ async function startEdit(recordId){
   document.getElementById('amountInput').value = r.Amount || '';
   document.getElementById('vendorInput').value = r.Vendor || '';
   selectedVendorId = r['Vendor ID'] || null;
+  document.getElementById('vendorInput').readOnly = !!selectedVendorId;
+  document.getElementById('vendorChangeLink').style.display = selectedVendorId ? 'inline-block' : 'none';
   document.getElementById('neededByInput').value = r['Needed By'] || '';
   document.getElementById('notesInput').value = r.Notes || '';
   const fulfillmentRadio = document.querySelector(`input[name="fulfillment"][value="${r.Fulfillment||'Pickup'}"]`);
