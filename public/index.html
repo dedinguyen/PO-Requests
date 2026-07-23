@@ -179,7 +179,6 @@
         <option value="Gabe">Gabe</option>
         <option value="Austin">Austin</option>
         <option value="Dennis">Dennis</option>
-        <option value="Eric">Eric</option>
       </select>
     </div>
     <button class="btn primary" style="width:100%" onclick="setName()">Continue</button>
@@ -579,7 +578,9 @@ function renderLists(){
 
   const pending = scoped.filter(r=>r.Status==='Pending Review' || r.Status==='Needs Info');
   const approved = scoped.filter(r=>r.Status==='Approved');
-  const complete = scoped.filter(r=>r.Status==='PO Assigned' || r.Status==='Rejected');
+  const complete = scoped
+    .filter(r=>r.Status==='PO Assigned' || r.Status==='Rejected')
+    .sort((a,b)=> new Date(b['Status Updated At']||0) - new Date(a['Status Updated At']||0));
 
   document.getElementById('pendingList').innerHTML = pending.length
     ? pending.map(r=>ticketHTML(r,'pending')).join('')
@@ -636,7 +637,12 @@ function init(){
   document.getElementById('whoName').textContent = myName();
   loadJobs();
   refreshRequests();
-  setInterval(refreshRequests, 30000);
+  setInterval(()=>{ if(document.visibilityState==='visible') refreshRequests(); }, 90000);
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='visible' && document.querySelector('nav.tabs button.active').dataset.view!=='new'){
+      refreshRequests();
+    }
+  });
   if(!localStorage.getItem('clc_po_push_enabled')){
     document.getElementById('notifyStrip').style.display='flex';
   }
